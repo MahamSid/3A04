@@ -9,39 +9,63 @@ def load_and_preprocess_image(image_path, target_size=(224, 224)):
     Loads an image from the given path, converts it to RGB, resizes it,
     and scales pixel values to [0, 1].
     """
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image file not found: {image_path}")
+
+    # Open and convert to RGB
     try:
         img = Image.open(image_path).convert('RGB')
     except Exception as e:
-        print(f"Error loading image: {e}")
-        sys.exit(1)
+        raise RuntimeError(f"Error loading image: {e}") from e
+
+    # Resize and normalize
     img = img.resize(target_size)
     img_array = np.array(img) / 255.0
-    # Expand dims to create a batch of size 1.
+
+    # Add a batch dimension: (1, height, width, 3)
     img_array = np.expand_dims(img_array, axis=0)
     return img_array
 
+def predict_img(image_path):
+    """
+    Loads the local model file 'ultrasound_pcos_model.h5' from the same directory,
+    preprocesses the input image, and returns the PCOS likelihood percentage.
+
+    Assumes the model's output layer is [PCOS_prob, NotPCOS_prob] via softmax.
+    """
+    # Build the model path relative to the current file's directory
+    model_path = os.path.join(os.path.dirname(__file__), "ultrasound_pcos_model.h5")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found at: {model_path}")
+
+    # Load the model
+    model = tf.keras.models.load_model(model_path)
+
+    # Preprocess the image
+    img_array = load_and_preprocess_image(image_path, target_size=(224, 224))
+
+    # Make a prediction (index 0 is "infected" (PCOS) probability)
+    predictions = model.predict(img_array)
+    pcos_likelihood_percentage = predictions[0][0] * 100.0
+    return pcos_likelihood_percentage
+
 def main():
-    # Hardcoded image path; update this to the path of your test image.
-    image_path = r"dataset/test/notinfected/img4.jpg"  # <-- Update this path
+    """
+    Example usage of predict_img with a hardcoded image path.
+    Modify the path or remove this function if not needed.
+    """
+    image_path = "path/to/hardcoded_image.png"  # <-- Replace with a real file path
 
     if not os.path.exists(image_path):
         print(f"Error: The file {image_path} does not exist.")
         sys.exit(1)
 
-    # Load the saved model
-    model = tf.keras.models.load_model("ultrasound_pcos_model.h5")
-
-    # Preprocess the image
-    img_array = load_and_preprocess_image(image_path, target_size=(224, 224))
-
-    # Make a prediction (output is a 2-element softmax vector)
-    predictions = model.predict(img_array)
-
-    # Assuming index 0 is the "infected" (PCOS) probability
-    pcos_likelihood_percentage = predictions[0][0] * 100.0
-
-    # Print the PCOS likelihood as a percentage (double)
-    print(f"PCOS Likelihood: {pcos_likelihood_percentage:.2f}%")
+    try:
+        pcos_likelihood_percentage = predict_img(image_path)
+        print(f"PCOS Likelihood: {pcos_likelihood_percentage:.2f}%")
+    except Exception as e:
+        print(f"Prediction error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
