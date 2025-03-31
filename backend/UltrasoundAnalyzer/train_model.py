@@ -7,6 +7,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D, GlobalAveragePooling2D
 from tensorflow.keras.optimizers import Adam
 from keras.src.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
+import time
 
 def clean_directory(dir_path, valid_extensions=('.png', '.jpg', '.jpeg')):
     """
@@ -158,4 +159,6 @@ def main():
     print("Model saved to ultrasound_pcos_model.h5")
 
 if __name__ == '__main__':
+    start = time.time()
     main()
+    print("Time taken:", time.time() - start, "seconds")

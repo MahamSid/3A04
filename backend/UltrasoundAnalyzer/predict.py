@@ -54,7 +54,7 @@ def main():
     Example usage of predict_img with a hardcoded image path.
     Modify the path or remove this function if not needed.
     """
-    image_path = "path/to/hardcoded_image.png"  # <-- Replace with a real file path
+    image_path = ""  # <-- Replace with a real file path
 
     if not os.path.exists(image_path):
         print(f"Error: The file {image_path} does not exist.")
