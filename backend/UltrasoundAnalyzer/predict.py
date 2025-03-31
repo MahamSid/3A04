@@ -1,70 +1,96 @@
 import os
 import sys
+import csv
+import base64
+import tempfile
 import numpy as np
 import tensorflow as tf
 from PIL import Image
 
-def load_and_preprocess_image(image_path, target_size=(224, 224)):
-    """
-    Loads an image from the given path, converts it to RGB, resizes it,
-    and scales pixel values to [0, 1].
-    """
-    if not os.path.exists(image_path):
-        raise FileNotFoundError(f"Image file not found: {image_path}")
+class ultrasoundCalculator:
+    def __init__(self, target_size=(224, 224)):
+        """
+        Initialize the calculator by setting the target image size and loading the model.
+        The model file 'ultrasound_pcos_model.h5' must be in the same directory as this script.
+        """
+        self.target_size = target_size
+        self.model_path = os.path.join(os.path.dirname(__file__), "ultrasound_pcos_model.h5")
+        if not os.path.exists(self.model_path):
+            raise FileNotFoundError(f"Model file not found at: {self.model_path}")
+        self.model = tf.keras.models.load_model(self.model_path)
 
-    # Open and convert to RGB
-    try:
-        img = Image.open(image_path).convert('RGB')
-    except Exception as e:
-        raise RuntimeError(f"Error loading image: {e}") from e
+    def load_and_preprocess_image(self, image_path):
+        """
+        Loads an image from the given path, converts it to RGB, resizes it,
+        and scales pixel values to [0, 1]. Returns an array with shape (1, height, width, 3).
+        """
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image file not found: {image_path}")
 
-    # Resize and normalize
-    img = img.resize(target_size)
-    img_array = np.array(img) / 255.0
+        try:
+            img = Image.open(image_path).convert('RGB')
+        except Exception as e:
+            raise RuntimeError(f"Error loading image: {e}") from e
 
-    # Add a batch dimension: (1, height, width, 3)
-    img_array = np.expand_dims(img_array, axis=0)
-    return img_array
+        img = img.resize(self.target_size)
+        img_array = np.array(img) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+        return img_array
 
-def predict_img(image_path):
-    """
-    Loads the local model file 'ultrasound_pcos_model.h5' from the same directory,
-    preprocesses the input image, and returns the PCOS likelihood percentage.
+    def predict_img(self, image_path):
+        """
+        Preprocesses the image and runs the model prediction.
+        Returns the PCOS likelihood percentage (float).
+        Assumes the model's output is a softmax vector [PCOS_prob, NotPCOS_prob]
+        and that the first index corresponds to the "infected" (PCOS) probability.
+        """
+        img_array = self.load_and_preprocess_image(image_path)
+        predictions = self.model.predict(img_array)
+        pcos_likelihood_percentage = predictions[0][0] * 100.0
+        return pcos_likelihood_percentage
 
-    Assumes the model's output layer is [PCOS_prob, NotPCOS_prob] via softmax.
-    """
-    # Build the model path relative to the current file's directory
-    model_path = os.path.join(os.path.dirname(__file__), "ultrasound_pcos_model.h5")
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"Model file not found at: {model_path}")
+    def predict(self):
+        """
+        Opens a hardcoded CSV file (named 'hardcoded.csv' in the same directory),
+        reads the first row's 'ultrasound_image' column (which should contain a base64
+        encoded image), decodes it into a JPG, saves it temporarily, and then runs
+        predict_img on the saved file.
+        Returns the PCOS likelihood percentage.
+        """
+        csv_file = os.path.join(os.path.dirname(__file__), "hardcoded.csv")
+        if not os.path.exists(csv_file):
+            raise FileNotFoundError(f"CSV file not found: {csv_file}")
 
-    # Load the model
-    model = tf.keras.models.load_model(model_path)
+        with open(csv_file, newline='') as f:
+            reader = csv.DictReader(f)
+            row = next(reader)  # Read the first row
 
-    # Preprocess the image
-    img_array = load_and_preprocess_image(image_path, target_size=(224, 224))
+        if "ultrasound_image" not in row:
+            raise ValueError("CSV file does not contain 'ultrasound_image' column")
 
-    # Make a prediction (index 0 is "infected" (PCOS) probability)
-    predictions = model.predict(img_array)
-    pcos_likelihood_percentage = predictions[0][0] * 100.0
-    return pcos_likelihood_percentage
+        base64_str = row["ultrasound_image"]
+        try:
+            img_data = base64.b64decode(base64_str)
+        except Exception as e:
+            raise ValueError(f"Error decoding base64 image data: {e}") from e
+
+        # Save the decoded image to a temporary file
+        temp_path = os.path.join(tempfile.gettempdir(), "temp_ultrasound.jpg")
+        with open(temp_path, "wb") as temp_file:
+            temp_file.write(img_data)
+
+        # Run prediction on the temporary file
+        result = self.predict_img(temp_path)
+        os.remove(temp_path)
+        return result
 
 def main():
-    """
-    Example usage of predict_img with a hardcoded image path.
-    Modify the path or remove this function if not needed.
-    """
-    image_path = ""  # <-- Replace with a real file path
-
-    if not os.path.exists(image_path):
-        print(f"Error: The file {image_path} does not exist.")
-        sys.exit(1)
-
     try:
-        pcos_likelihood_percentage = predict_img(image_path)
-        print(f"PCOS Likelihood: {pcos_likelihood_percentage:.2f}%")
+        calculator = ultrasoundCalculator()
+        pcos_likelihood = calculator.predict()
+        print(f"PCOS Likelihood: {pcos_likelihood:.2f}%")
     except Exception as e:
-        print(f"Prediction error: {e}")
+        print(f"Error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

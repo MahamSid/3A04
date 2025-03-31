@@ -2,20 +2,9 @@ import os
 import tempfile
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from predict import predict_img
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
-
-@app.route('/ultrasound_analyzer/predict', methods=['GET'])
-def predict_pcos():
-    temp_path = 'last_upload_img.jpg'
-    try:
-        # Call predict_img (defined in predict.py) to get the PCOS likelihood percentage
-        pcos_likelihood_percentage = predict_img(temp_path)
-        return jsonify({'PCOS Likelihood': f"{pcos_likelihood_percentage:.2f}%"})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/ultrasound_analyzer/uploadImage', methods=['POST'])
 def upload_image():
