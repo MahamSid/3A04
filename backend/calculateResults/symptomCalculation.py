@@ -1,6 +1,8 @@
 from flask import json
 import csv, requests, config
-import sys
+import sys, dotenv
+from dotenv import load_dotenv
+import os
 
 class symptomCalculation():
     """
@@ -64,7 +66,8 @@ class symptomCalculation():
         """
 
         # Set api key and url to be used
-        API_KEY = config.API_KEY
+        load_dotenv()
+        API_KEY = os.getenv("API_KEY")
         API_URL = 'https://openrouter.ai/api/v1/chat/completions'
         headers = {
             'Authorization': f'Bearer {API_KEY}',
