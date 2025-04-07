@@ -16,14 +16,19 @@ export default function LoginScreen({ navigation }: { navigation: any }) {
   const loginAttempt = async () => {
     const listOfCredentials = [user, password];
     try {
-      const response = await fetch("http://127.0.0.1:5000/LoginAttempt", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ incomingRequestCredentials: listOfCredentials }),
-      }).then((response) => {
+      const response = await fetch(
+        "https://polycare-backend.onrender.com/LoginAttempt",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            incomingRequestCredentials: listOfCredentials,
+          }),
+        }
+      ).then((response) => {
         response.json();
         console.log("Output", response.status);
         if (response.status === 200) {

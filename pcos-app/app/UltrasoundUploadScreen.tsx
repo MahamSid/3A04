@@ -45,7 +45,7 @@ export default function UltrasoundUploadScreen() {
       formData.append("image", blob, filename);
 
       const response = await fetch(
-        "http://127.0.0.1:5000/UltrasoundAnalyzer/UploadResults",
+        "https://polycare-backend.onrender.com/UltrasoundAnalyzer/UploadResults",
         {
           method: "POST",
           body: formData,

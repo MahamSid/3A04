@@ -18,7 +18,7 @@ export default function SymptomUploadScreen() {
 
   const saveData = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/", {
+      const response = await fetch("https://polycare-backend.onrender.com/", {
         method: "GET",
       }).then((response) => response.json());
 
@@ -33,14 +33,17 @@ export default function SymptomUploadScreen() {
     console.log(listOfSymptoms);
 
     try {
-      await fetch("http://127.0.0.1:5000/SymptomUploadResults", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ response: listOfSymptoms }),
-      }).then((response) => {
+      await fetch(
+        "https://polycare-backend.onrender.com/SymptomUploadResults",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ response: listOfSymptoms }),
+        }
+      ).then((response) => {
         response.json();
         console.log(response);
       });

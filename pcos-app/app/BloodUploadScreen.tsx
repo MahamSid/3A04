@@ -18,18 +18,21 @@ export default function BloodUploadScreen() {
     console.log(glucose, testosterone, bileSalts);
 
     try {
-      await fetch("http://127.0.0.1:5000/BloodTestUploadResults", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          glucose: parseFloat(glucose),
-          testosterone: parseFloat(testosterone),
-          bileSalts: parseFloat(bileSalts),
-        }),
-      })
+      await fetch(
+        "https://polycare-backend.onrender.com/BloodTestUploadResults",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            glucose: parseFloat(glucose),
+            testosterone: parseFloat(testosterone),
+            bileSalts: parseFloat(bileSalts),
+          }),
+        }
+      )
         .then((response) => response.json())
         .then((data) => {
           console.log(data);

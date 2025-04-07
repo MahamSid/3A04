@@ -7,7 +7,7 @@ export default function HomeScreen({ navigation }: { navigation: any }) {
   const handleGetLikelihood = async () => {
     try {
       const response = await fetch(
-        "http://127.0.0.1:5000/api/calculateLikelihood",
+        "https://polycare-backend.onrender.com/api/calculateLikelihood",
         {
           method: "POST",
         }
