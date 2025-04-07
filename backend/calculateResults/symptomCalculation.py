@@ -1,5 +1,5 @@
 from flask import json
-import csv, requests, config
+import csv, requests
 import sys, dotenv
 from dotenv import load_dotenv
 import os
