@@ -1,7 +1,7 @@
 from pathlib import Path
 from flask import json
 import pandas as pd
-import csv, requests, config
+import csv, requests
 
 class bloodCalculation():
     """
